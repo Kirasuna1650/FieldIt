@@ -1,0 +1,726 @@
+:root {
+  --vscode-bg: #ffffff;
+  --vscode-bg-alt: #f3f3f3;
+  --vscode-surface: #fcfcfc;
+  --vscode-border: #e5e5e5;
+  --vscode-border-strong: #c9c9c9;
+  --vscode-text: #1f1f1f;
+  --vscode-muted: #616161;
+  --vscode-focus: #007fd4;
+  --vscode-link: #006ab1;
+  --vscode-btn: #0e639c;
+  --vscode-btn-hover: #1177bb;
+  --vscode-btn-text: #ffffff;
+  --vscode-danger: #be1100;
+  --accent-blue-soft: #eaf3ff;
+  --accent-blue-mid: #d6eaff;
+  --accent-blue-edge: #b7d7f2;
+  --accent-blue-strong: #0b5fa5;
+  --topbar-blue: #0078d4;
+  --topbar-blue-deep: #106ebe;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  color: var(--vscode-text);
+  height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(180deg, #f7f9fc 0%, var(--vscode-bg-alt) 62%, var(--accent-blue-soft) 100%);
+}
+
+.dashboard-bg {
+  display: none;
+}
+
+.top-ribbon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  height: 48px;
+  padding: 0 0.9rem;
+  background: linear-gradient(180deg, var(--topbar-blue) 0%, var(--topbar-blue-deep) 100%);
+  border-bottom: 1px solid #005ea6;
+  color: #ffffff;
+}
+
+.ribbon-brand h1 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: #cfe9ff;
+}
+
+.help-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.help-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.help-btn:focus-visible {
+  outline: 1px solid var(--vscode-focus);
+  outline-offset: -1px;
+}
+
+.help-popover {
+  position: absolute;
+  right: 0.8rem;
+  top: calc(100% + 0.45rem);
+  width: min(320px, calc(100vw - 1rem));
+  border: 1px solid var(--vscode-border-strong);
+  border-radius: 4px;
+  background: var(--vscode-bg);
+  color: var(--vscode-text);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  padding: 0.7rem;
+  z-index: 8;
+}
+
+.help-popover h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.9rem;
+}
+
+.help-popover ol {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.28rem;
+  font-size: 0.84rem;
+}
+
+.dashboard-shell {
+  width: calc(100% - 1rem);
+  margin: 0.5rem auto;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 0.5rem;
+  align-items: stretch;
+  height: calc(100vh - 48px - 1rem);
+}
+
+.workspace-status-rail {
+  min-height: 0;
+}
+
+.sidebar-card {
+  background: var(--vscode-bg);
+  border: 1px solid var(--vscode-border);
+  box-shadow: inset 2px 0 0 var(--accent-blue-edge);
+  border-radius: 4px;
+  padding: 0.75rem;
+}
+
+.rail-status-card {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.sidebar-card h2 {
+  margin: 0 0 0.55rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.dashboard-main {
+  display: grid;
+  grid-template-rows: 1fr;
+  min-height: 0;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.panel-nav-slot {
+  display: flex;
+  justify-content: flex-end;
+  flex: 1;
+  min-width: 0;
+}
+
+.workflow-tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.step-tab {
+  border: 1px solid var(--vscode-border-strong);
+  border-radius: 4px;
+  background: var(--vscode-bg-alt);
+  color: var(--vscode-text);
+  padding: 0.34rem 0.7rem;
+  font-weight: 500;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.step-tab:hover {
+  background: var(--accent-blue-soft);
+}
+
+.step-tab.is-active {
+  background: var(--accent-blue-mid);
+  border-color: var(--accent-blue-edge);
+  color: var(--accent-blue-strong);
+}
+
+.card {
+  background: var(--vscode-bg);
+  border: 1px solid var(--vscode-border);
+  box-shadow: inset 0 2px 0 var(--accent-blue-soft);
+  border-radius: 4px;
+  padding: 0.9rem;
+  min-height: 0;
+}
+
+.step-panel {
+  height: 100%;
+  overflow: auto;
+  position: relative;
+}
+
+h2 {
+  margin: 0 0 0.75rem;
+  color: var(--accent-blue-strong);
+}
+
+.hint {
+  color: var(--vscode-muted);
+  margin: 0.2rem 0 0.7rem;
+  font-size: 0.9rem;
+}
+
+.bulk-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.45rem;
+  color: var(--vscode-text);
+}
+
+.bulk-toggle input {
+  width: 16px;
+  height: 16px;
+}
+
+.bulk-mode-note {
+  margin: 0 0 0.7rem;
+  color: var(--vscode-muted);
+  font-size: 0.86rem;
+}
+
+.file-control {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--vscode-text);
+}
+
+.file-control input {
+  width: 100%;
+  border: 1px solid var(--vscode-border-strong);
+  border-radius: 2px;
+  padding: 0.42rem 0.5rem;
+  background: #fbfdff;
+  color: var(--vscode-text);
+}
+
+.file-control input:focus,
+.sheet-row input:focus,
+.output-name input:focus,
+.worksheet-table input:focus {
+  outline: 1px solid var(--vscode-focus);
+  outline-offset: -1px;
+  border-color: var(--vscode-focus);
+}
+
+.btn {
+  margin-top: 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 0.42rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.83rem;
+  font-weight: 500;
+}
+
+.btn.secondary {
+  background: #f3f3f3;
+  color: var(--vscode-text);
+  border-color: var(--vscode-border-strong);
+}
+
+.btn.secondary:hover {
+  background: #e8e8e8;
+}
+
+.btn.primary {
+  background: var(--vscode-btn);
+  color: var(--vscode-btn-text);
+}
+
+.btn.primary:hover {
+  background: var(--vscode-btn-hover);
+}
+
+.mapping {
+  border: 1px dashed var(--vscode-border-strong);
+  border-radius: 4px;
+  padding: 0.65rem 0.8rem;
+  background: var(--vscode-surface);
+  max-height: 60px;
+  overflow: auto;
+}
+
+.mapping.empty {
+  color: var(--vscode-muted);
+}
+
+.worksheet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-bottom: 0.8rem;
+}
+
+.sheet-fields {
+  border: 1px solid var(--vscode-border);
+  border-radius: 4px;
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
+  background: var(--accent-blue-soft);
+}
+
+.subheading {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.sheet-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem 0.8rem;
+}
+
+.sheet-row {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.sheet-row label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--vscode-text);
+}
+
+.sheet-row input,
+.output-name input {
+  width: 100%;
+  border-radius: 2px;
+  border: 1px solid var(--vscode-border-strong);
+  padding: 0.35rem 0.45rem;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid var(--vscode-border);
+  border-radius: 4px;
+  background: var(--vscode-bg);
+  max-height: min(64vh, 680px);
+}
+
+.worksheet-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.worksheet-table th,
+.worksheet-table td {
+  border-bottom: 1px solid var(--vscode-border);
+  border-right: 1px solid var(--vscode-border);
+  padding: 0.48rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.worksheet-table th:last-child,
+.worksheet-table td:last-child {
+  border-right: none;
+}
+
+.worksheet-table th {
+  background: var(--accent-blue-soft);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+  padding-right: 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.worksheet-table input {
+  width: 100%;
+  border-radius: 2px;
+  border: 1px solid var(--vscode-border-strong);
+  padding: 0.45rem 0.42rem;
+  background: var(--vscode-bg);
+}
+
+.worksheet-table th:first-child,
+.worksheet-table td:first-child,
+.worksheet-table th:last-child,
+.worksheet-table td:last-child {
+  width: 54px;
+}
+
+.col-resizer {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+}
+
+.col-resizer::before {
+  content: "";
+  position: absolute;
+  top: 20%;
+  bottom: 20%;
+  left: 4px;
+  width: 1px;
+  background: transparent;
+  transition: background 120ms ease;
+}
+
+.worksheet-table th:hover .col-resizer::before {
+  background: #9f9f9f;
+}
+
+body.is-col-resizing {
+  cursor: col-resize;
+}
+
+.output-name {
+  max-width: 360px;
+}
+
+.generate-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.row-remove {
+  margin-top: 0;
+  background: #fff2f2;
+  color: var(--vscode-danger);
+  border-color: #f0c8c8;
+}
+
+.download {
+  display: inline-block;
+  color: var(--vscode-link);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.status {
+  color: var(--accent-blue-strong);
+  min-height: 2.6em;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.status.error {
+  color: var(--vscode-danger);
+}
+
+@media (max-width: 1100px) {
+  body {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
+
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+    width: min(980px, calc(100% - 0.8rem));
+    margin: 0.4rem auto;
+    gap: 0.45rem;
+  }
+
+  .workspace-status-rail {
+    order: 2;
+  }
+
+  .dashboard-main {
+    order: 1;
+  }
+
+  .rail-status-card {
+    min-height: 92px;
+  }
+
+  .card {
+    padding: 0.8rem;
+  }
+
+  .table-scroll {
+    max-height: min(58vh, 520px);
+  }
+}
+
+@media (max-width: 760px) {
+  .top-ribbon {
+    flex-direction: column;
+    align-items: flex-start;
+    height: auto;
+    padding: 0.55rem 0.7rem;
+    gap: 0.45rem;
+  }
+
+  .ribbon-brand h1 {
+    font-size: 0.95rem;
+  }
+
+  .dashboard-shell {
+    width: calc(100% - 0.5rem);
+    margin: 0.25rem auto;
+    gap: 0.45rem;
+  }
+
+  .sidebar-card {
+    padding: 0.68rem;
+    border-radius: 4px;
+  }
+
+  .panel-head {
+    margin-bottom: 0.38rem;
+  }
+
+  .panel-head h2 {
+    font-size: 0.96rem;
+  }
+
+  .panel-nav-slot {
+    width: 100%;
+  }
+
+  .workflow-tabs {
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #f3f3f3;
+    padding: 0.25rem;
+    border: 1px solid var(--vscode-border);
+    border-radius: 4px;
+    gap: 0.3rem;
+  }
+
+  .step-tab {
+    flex: 1 1 calc(33.333% - 0.3rem);
+    min-width: 0;
+    text-align: center;
+    padding: 0.4rem 0.35rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .step-panel {
+    overflow: visible;
+  }
+
+  .hint {
+    font-size: 0.84rem;
+  }
+
+  .file-control {
+    font-size: 0.84rem;
+  }
+
+  .btn {
+    padding: 0.45rem 0.72rem;
+    font-size: 0.8rem;
+  }
+
+  .table-scroll {
+    max-height: min(54vh, 420px);
+  }
+
+  .worksheet-table th,
+  .worksheet-table td {
+    padding: 0.4rem;
+  }
+
+  .worksheet-table input {
+    padding: 0.4rem 0.36rem;
+    min-width: 120px;
+  }
+
+  .sheet-fields-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .help-popover {
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .top-ribbon {
+    padding: 0.48rem 0.56rem;
+  }
+
+  .ribbon-brand h1 {
+    font-size: 0.92rem;
+  }
+
+  .eyebrow {
+    font-size: 0.62rem;
+  }
+
+  .help-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .dashboard-shell {
+    width: calc(100% - 0.34rem);
+    margin: 0.18rem auto;
+    gap: 0.34rem;
+  }
+
+  .sidebar-card,
+  .card {
+    padding: 0.62rem;
+    border-radius: 4px;
+  }
+
+  .workflow-tabs {
+    gap: 0.25rem;
+    padding: 0.2rem;
+  }
+
+  .step-tab {
+    flex: 1 1 calc(50% - 0.2rem);
+    min-height: 38px;
+    white-space: normal;
+    line-height: 1.15;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.4rem;
+  }
+
+  .panel-head {
+    gap: 0.48rem;
+  }
+
+  .panel-head h2 {
+    font-size: 0.92rem;
+  }
+
+  .hint {
+    font-size: 0.82rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .file-control {
+    font-size: 0.8rem;
+    gap: 0.3rem;
+  }
+
+  .file-control input,
+  .sheet-row input,
+  .output-name input,
+  .worksheet-table input {
+    min-height: 36px;
+    font-size: 0.86rem;
+  }
+
+  .btn {
+    min-height: 36px;
+    font-size: 0.8rem;
+    padding: 0.42rem 0.62rem;
+  }
+
+  .table-scroll {
+    max-height: min(52vh, 360px);
+  }
+
+  .worksheet-table th,
+  .worksheet-table td {
+    padding: 0.36rem;
+  }
+
+  .status {
+    font-size: 0.8rem;
+    min-height: 2.1em;
+  }
+
+  .help-popover {
+    top: calc(100% + 0.35rem);
+    right: 0.35rem;
+    left: 0.35rem;
+    padding: 0.62rem;
+  }
+
+  .help-popover ol {
+    font-size: 0.8rem;
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "pdf-bulk-filler-webapp",
+  "version": "1.0.0",
+  "description": "Web app to bulk fill PDF forms from worksheet table input",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^2.0.2",
+    "pdf-lib": "^1.17.1"
+  }
+}

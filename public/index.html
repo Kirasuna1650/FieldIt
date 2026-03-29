@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF BulkEdit</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="dashboard-bg"></div>
+
+    <header class="top-ribbon">
+      <div class="ribbon-brand">
+        <p class="eyebrow">Online PDF Field Editor</p>
+        <h1>Field It</h1>
+      </div>
+      <button
+        id="helpBtn"
+        class="help-btn"
+        type="button"
+        aria-label="Show help"
+        aria-expanded="false"
+        title="How this works"
+      >
+        <span aria-hidden="true">?</span>
+      </button>
+      <section id="helpPopover" class="help-popover" hidden>
+        <h3>How It Works</h3>
+        <ol>
+          <li>Upload a fillable PDF template.</li>
+          <li>Click Build Worksheet from PDF.</li>
+          <li>Enter values in worksheet fields/table.</li>
+          <li>Go to Generate Files and download output.</li>
+        </ol>
+      </section>
+    </header>
+
+    <main class="dashboard-shell">
+      <aside class="workspace-status-rail">
+        <section class="sidebar-card rail-status-card">
+          <h2>Live Status</h2>
+          <p id="status" class="status" aria-live="polite"></p>
+        </section>
+      </aside>
+
+      <section class="dashboard-main">
+        <nav class="workflow-tabs" aria-label="Workflow steps">
+          <button class="step-tab is-active" data-step="upload" type="button">
+            Upload Template
+          </button>
+          <button class="step-tab" data-step="worksheet" type="button">
+            Worksheet Input
+          </button>
+          <button class="step-tab" data-step="generate" type="button">
+            Generate Files
+          </button>
+        </nav>
+
+        <section class="card step-panel panel-upload" data-panel="upload">
+          <div class="panel-head">
+            <h2>Upload Template</h2>
+            <div class="panel-nav-slot"></div>
+          </div>
+          <label class="file-control">
+            <span>Fillable PDF Template</span>
+            <input id="pdfFile" type="file" accept="application/pdf" />
+          </label>
+          <button id="detectFieldsBtn" class="btn secondary" type="button">
+            Build Worksheet from PDF
+          </button>
+        </section>
+
+        <section class="card step-panel panel-worksheet" data-panel="worksheet" hidden>
+          <div class="panel-head">
+            <h2>Worksheet Input</h2>
+            <div class="panel-nav-slot"></div>
+          </div>
+          <p class="hint">
+            Column headers are PDF categories. Add rows and type values directly.
+          </p>
+          <!--
+          <label class="bulk-toggle">
+            <input id="bulkModeToggle" type="checkbox" />
+            Enable Bulk Mode (multiple output files)
+          </label>
+          <p id="bulkModeNote" class="bulk-mode-note"></p>
+          -->
+          <div id="sheetFieldsContainer" class="sheet-fields" hidden></div>
+          <!--
+          <div class="worksheet-actions">
+            <button id="addRowBtn" class="btn secondary" type="button">Add Row</button>
+            <button id="addFiveRowsBtn" class="btn secondary" type="button">Add 5 Rows</button>
+            <button id="clearRowsBtn" class="btn secondary" type="button">Clear Rows</button>
+          </div>
+          -->
+          <div id="worksheetContainer" class="mapping empty">
+            Build worksheet to start entering table data.
+          </div>
+          <div class="table-scroll" id="tableScroll" hidden>
+            <table id="worksheetTable" class="worksheet-table"></table>
+          </div>
+        </section>
+
+        <section class="card step-panel panel-generate" data-panel="generate" hidden>
+          <div class="panel-head">
+            <h2>Generate Files</h2>
+            <div class="panel-nav-slot"></div>
+          </div>
+          <label class="file-control output-name">
+            <span>Output File Name (optional)</span>
+            <input id="outputFileName" type="text" placeholder="filled-signin-sheet" />
+          </label>
+          <div class="generate-row">
+            <button id="generateBtn" class="btn primary" type="button">
+              Generate Filled PDF
+            </button>
+            <a id="downloadLink" class="download" hidden>Download Filled PDF</a>
+          </div>
+        </section>
+      </section>
+
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
