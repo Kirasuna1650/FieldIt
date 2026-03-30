@@ -1,3 +1,57 @@
+// --- Live PDF Preview ---
+const worksheetPreviewPanel = document.getElementById("worksheetPreviewPanel");
+const worksheetPreviewCanvas = document.getElementById("worksheetPreviewCanvas");
+let worksheetPreviewPdfUrl = null;
+
+async function updateWorksheetPreview() {
+  if (!worksheetPreviewPanel || !worksheetPreviewCanvas) return;
+  const pdf = pdfInput.files?.[0];
+  if (!pdf) {
+    worksheetPreviewPanel.hidden = true;
+    return;
+  }
+  // Collect current worksheet row (first record)
+  const table = worksheetTable;
+  if (!table) return;
+  const tbody = table.querySelector("tbody");
+  if (!tbody) return;
+  const rowData = {};
+  // For each row (category), get the value from the first column (record 0)
+  Array.from(tbody.children).forEach((tr) => {
+    const label = tr.firstChild?.textContent;
+    const input = tr.children[1]?.querySelector("input");
+    if (label && input) {
+      rowData[label] = input.value;
+    }
+  });
+  // Send to backend for preview
+  worksheetPreviewPanel.hidden = false;
+  worksheetPreviewCanvas.style.opacity = 0.5;
+  try {
+    const fd = new FormData();
+    fd.append("pdf", pdf);
+    fd.append("row", JSON.stringify(rowData));
+    const resp = await fetch("/api/preview", { method: "POST", body: fd });
+    if (!resp.ok) throw new Error("Preview failed");
+    const blob = await resp.blob();
+    if (worksheetPreviewPdfUrl) URL.revokeObjectURL(worksheetPreviewPdfUrl);
+    worksheetPreviewPdfUrl = URL.createObjectURL(blob);
+    // Render first page as image using PDF.js
+    if (window.pdfjsLib) {
+      const pdfDoc = await window.pdfjsLib.getDocument({ url: worksheetPreviewPdfUrl }).promise;
+      const page = await pdfDoc.getPage(1);
+      const scale = 1.1;
+      const viewport = page.getViewport({ scale });
+      worksheetPreviewCanvas.width = viewport.width;
+      worksheetPreviewCanvas.height = viewport.height;
+      const ctx = worksheetPreviewCanvas.getContext("2d", { alpha: false });
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      worksheetPreviewCanvas.style.opacity = 1;
+    }
+  } catch (e) {
+    worksheetPreviewPanel.hidden = true;
+  }
+}
 const pdfInput = document.getElementById("pdfFile");
 const detectFieldsBtn = document.getElementById("detectFieldsBtn");
 const generateBtn = document.getElementById("generateBtn");
@@ -270,60 +324,66 @@ function renderWorksheet(fields) {
   worksheetContainer.textContent = "";
   tableScroll.hidden = false;
 
-  const thead = document.createElement("thead");
-  const headerRow = document.createElement("tr");
+  // Vertical layout: categories as rows, records as columns
   const colgroup = document.createElement("colgroup");
+  const thead = document.createElement("thead");
+  const tbody = document.createElement("tbody");
 
-  const indexTh = document.createElement("th");
-  indexTh.textContent = "#";
-  const indexCol = createColWithWidth(56);
-  colgroup.appendChild(indexCol);
-  headerRow.appendChild(indexTh);
+  // First column: field/category name
+  const nameCol = createColWithWidth(160);
+  colgroup.appendChild(nameCol);
 
-  if (getCurrentMode() === "bulk" && !groupedFields.repeating) {
-    const fileTh = document.createElement("th");
-    fileTh.textContent = "Output Name";
-    const fileCol = createColWithWidth(170);
-    colgroup.appendChild(fileCol);
-    attachColumnResizer(fileTh, fileCol, 120);
-    headerRow.appendChild(fileTh);
+  // Add columns for each record (row of data)
+  const recordCount = worksheetTable._recordCount || 1;
+  for (let i = 0; i < recordCount; i++) {
+    colgroup.appendChild(createColWithWidth(210));
   }
 
+  // Header row: blank cell + record numbers
+  const headerRow = document.createElement("tr");
+  const blankTh = document.createElement("th");
+  blankTh.textContent = "#";
+  headerRow.appendChild(blankTh);
+  for (let i = 0; i < recordCount; i++) {
+    const th = document.createElement("th");
+    th.textContent = String(i + 1);
+    headerRow.appendChild(th);
+  }
+  thead.appendChild(headerRow);
+
+  // Get all categories/fields
   const categories = groupedFields.repeating
     ? groupedFields.repeating.categories
     : fields.map((field) => field.name);
 
+  // For each category, create a row
   categories.forEach((category) => {
-    const th = document.createElement("th");
-    th.textContent = category;
-    const dataCol = createColWithWidth(210);
-    colgroup.appendChild(dataCol);
-    attachColumnResizer(th, dataCol, 110);
-    headerRow.appendChild(th);
+    const tr = document.createElement("tr");
+    const labelTd = document.createElement("td");
+    labelTd.textContent = category;
+    tr.appendChild(labelTd);
+    for (let i = 0; i < recordCount; i++) {
+      const td = document.createElement("td");
+      td.appendChild(createCellInput("", category + "__" + i));
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
   });
 
-  if (getCurrentMode() !== "single") {
-    const actionTh = document.createElement("th");
-    actionTh.textContent = "Actions";
-    const actionCol = createColWithWidth(96);
-    colgroup.appendChild(actionCol);
-    headerRow.appendChild(actionTh);
-  }
-
-  thead.appendChild(headerRow);
-
-  const tbody = document.createElement("tbody");
   worksheetTable.innerHTML = "";
   worksheetTable.appendChild(colgroup);
   worksheetTable.appendChild(thead);
   worksheetTable.appendChild(tbody);
+  worksheetTable._recordCount = recordCount;
 
-  const defaultRows = groupedFields.repeating
-    ? groupedFields.repeating.indices.length || 3
-    : getCurrentMode() === "bulk"
-      ? 3
-      : 1;
-  addRow(defaultRows);
+  // Attach input listeners for live preview
+  Array.from(tbody.querySelectorAll("input")).forEach((input) => {
+    input.addEventListener("input", () => {
+      updateWorksheetPreview();
+    });
+  });
+  // Initial preview
+  updateWorksheetPreview();
 }
 
 function createCellInput(placeholder, fieldName = "") {

@@ -139,8 +139,15 @@
           <div id="worksheetContainer" class="mapping empty">
             Build worksheet to start entering table data.
           </div>
-          <div class="table-scroll" id="tableScroll" hidden>
-            <table id="worksheetTable" class="worksheet-table"></table>
+          <div class="worksheet-flex-row">
+            <div class="table-scroll" id="tableScroll" hidden>
+              <table id="worksheetTable" class="worksheet-table"></table>
+            </div>
+            <div class="worksheet-preview-panel" id="worksheetPreviewPanel" hidden>
+              <h3 class="subheading">Live PDF Preview</h3>
+              <canvas id="worksheetPreviewCanvas"></canvas>
+              <div id="worksheetPreviewOverlay" class="worksheet-preview-overlay"></div>
+            </div>
           </div>
         </section>
 
