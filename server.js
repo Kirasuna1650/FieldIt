@@ -182,11 +182,11 @@ async function createManualFieldsPdf(templatePdfBytes, fieldSpecs) {
       y,
       width,
       height,
-      borderWidth: 0,
-      borderColor: undefined,
-      backgroundColor: undefined,
+      borderWidth: 1,
+      borderColor: rgb(0.08, 0.19, 0.31),
+      backgroundColor: rgb(1, 1, 1),
       textColor: rgb(0.08, 0.19, 0.31),
-      // No underline, no visible widget
+      // Default visible widget
     });
     textField.enableScrolling();
     textField.updateAppearances(font => font);
