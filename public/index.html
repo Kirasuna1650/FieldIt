@@ -69,6 +69,13 @@
           <h2>Live Status</h2>
           <p id="status" class="status" aria-live="polite"></p>
         </section>
+        <section class="sidebar-card rail-preview-card">
+          <h2>Preview</h2>
+          <p class="hint compact-hint">Preview current worksheet input before download.</p>
+          <button id="previewBtn" class="btn secondary rail-preview-btn" type="button">
+            Preview Field
+          </button>
+        </section>
       </aside>
 
       <section class="dashboard-main">
@@ -121,6 +128,31 @@
             <button id="clearRowsBtn" class="btn secondary" type="button">Clear Rows</button>
           </div>
           -->
+          <section id="manualFieldsPanel" class="manual-fields-panel" hidden>
+            <h3 class="subheading">Manual Field Builder</h3>
+            <p class="hint compact-hint">
+              Add field names one by one, then build a worksheet from your custom list.
+            </p>
+            <div class="manual-fields-row">
+              <input
+                id="manualFieldInput"
+                type="text"
+                placeholder="Field name, for example FirstName"
+              />
+              <button id="addManualFieldBtn" class="btn secondary" type="button">
+                Add Field
+              </button>
+            </div>
+            <ul id="manualFieldList" class="manual-field-list"></ul>
+            <div class="manual-fields-actions">
+              <button id="buildManualWorksheetBtn" class="btn primary" type="button">
+                Build Worksheet from Manual Fields
+              </button>
+              <button id="clearManualFieldsBtn" class="btn secondary" type="button">
+                Clear Manual Fields
+              </button>
+            </div>
+          </section>
           <div id="worksheetContainer" class="mapping empty">
             Build worksheet to start entering table data.
           </div>
@@ -148,6 +180,16 @@
       </section>
 
     </main>
+
+    <section id="previewOverlay" class="preview-overlay" hidden>
+      <div class="preview-shell" role="dialog" aria-modal="true" aria-label="PDF preview">
+        <div class="preview-header">
+          <h3>Field Preview</h3>
+          <button id="closePreviewBtn" class="btn secondary" type="button">Close</button>
+        </div>
+        <iframe id="previewFrame" class="preview-frame" title="Filled PDF preview"></iframe>
+      </div>
+    </section>
 
     <script src="/app.js"></script>
   </body>
