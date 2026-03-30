@@ -1,6 +1,6 @@
 const express = require("express");
 const multer = require("multer");
-const { PDFDocument } = require("pdf-lib");
+const { PDFDocument, rgb } = require("pdf-lib");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -120,6 +120,70 @@ function rowHasAnyInput(row) {
   return keys.some((key) => String(row[key] ?? "").trim().length > 0);
 }
 
+function parseManualFieldsPayload(payload) {
+  const fields = JSON.parse(payload);
+  if (!Array.isArray(fields)) {
+    throw new Error("Fields payload must be an array.");
+  }
+  return fields;
+}
+
+function toSafeFieldName(value, index) {
+  const fallback = `manual_field_${index + 1}`;
+  const candidate = String(value || "")
+    .trim()
+    .replace(/[^A-Za-z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return candidate || fallback;
+}
+
+async function createManualFieldsPdf(templatePdfBytes, fieldSpecs) {
+  const pdfDoc = await PDFDocument.load(templatePdfBytes);
+  const form = pdfDoc.getForm();
+  const pages = pdfDoc.getPages();
+  const usedNames = new Set(form.getFields().map((field) => field.getName()));
+
+  for (let idx = 0; idx < fieldSpecs.length; idx += 1) {
+    const spec = fieldSpecs[idx] || {};
+    const pageIndex = Number(spec.pageIndex);
+    if (!Number.isInteger(pageIndex) || pageIndex < 0 || pageIndex >= pages.length) {
+      continue;
+    }
+
+    let fieldName = toSafeFieldName(spec.name, idx);
+    let suffix = 1;
+    while (usedNames.has(fieldName)) {
+      fieldName = `${toSafeFieldName(spec.name, idx)}_${suffix}`;
+      suffix += 1;
+    }
+    usedNames.add(fieldName);
+
+    const x = Number(spec.x);
+    const y = Number(spec.y);
+    const width = Math.max(48, Number(spec.width) || 160);
+    const height = Math.max(18, Number(spec.height) || 24);
+
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      continue;
+    }
+
+    const page = pages[pageIndex];
+    const textField = form.createTextField(fieldName);
+    textField.addToPage(page, {
+      x,
+      y,
+      width,
+      height,
+      borderColor: rgb(0.26, 0.53, 0.86),
+      borderWidth: 1,
+      textColor: rgb(0.08, 0.19, 0.31)
+    });
+  }
+
+  return pdfDoc.save();
+}
+
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
@@ -191,6 +255,37 @@ app.post(
     }
   }
 );
+
+app.post("/api/manual-fields", upload.single("pdf"), async (req, res) => {
+  try {
+    const pdfFile = req.file;
+    if (!pdfFile) {
+      return res.status(400).json({ error: "A PDF template file is required." });
+    }
+
+    if (!req.body.fields) {
+      return res.status(400).json({ error: "Manual field definitions are required." });
+    }
+
+    let fields;
+    try {
+      fields = parseManualFieldsPayload(req.body.fields);
+    } catch (error) {
+      return res.status(400).json({ error: "Invalid fields payload." });
+    }
+
+    if (!fields.length) {
+      return res.status(400).json({ error: "At least one field must be added." });
+    }
+
+    const nextPdfBytes = await createManualFieldsPdf(pdfFile.buffer, fields);
+    return res.send(Buffer.from(nextPdfBytes));
+  } catch (error) {
+    return res.status(500).json({
+      error: "Unable to insert manual fields into PDF. Please try again."
+    });
+  }
+});
 
 app.listen(port, () => {
   console.log(`PDF bulk filler listening on http://localhost:${port}`);

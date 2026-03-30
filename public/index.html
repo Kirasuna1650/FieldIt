@@ -48,6 +48,9 @@
           <button class="step-tab is-active" data-step="upload" type="button">
             Upload Template
           </button>
+          <button id="editorStepTab" class="step-tab" data-step="editor" type="button" hidden>
+            Field Editor
+          </button>
           <button class="step-tab" data-step="worksheet" type="button">
             Worksheet Input
           </button>
@@ -68,6 +71,46 @@
           <button id="detectFieldsBtn" class="btn secondary" type="button">
             Build Worksheet from PDF
           </button>
+        </section>
+
+        <section class="card step-panel panel-editor" data-panel="editor" hidden>
+          <div class="panel-head">
+            <h2>Field Editor</h2>
+            <div class="panel-nav-slot"></div>
+          </div>
+          <p class="hint">
+            Tap the PDF preview to place fields. Field names auto-increment based on the prefix.
+          </p>
+          <div class="editor-toolbar">
+            <label class="editor-label">
+              Field Prefix
+              <input id="editorFieldPrefix" type="text" value="manual_field" />
+            </label>
+            <label class="editor-label compact">
+              Width
+              <input id="editorFieldWidth" type="number" min="48" value="160" />
+            </label>
+            <label class="editor-label compact">
+              Height
+              <input id="editorFieldHeight" type="number" min="18" value="24" />
+            </label>
+          </div>
+          <div class="editor-canvas-shell" id="editorCanvasShell">
+            <canvas id="editorCanvas"></canvas>
+            <div id="editorClickLayer" class="editor-click-layer" aria-hidden="true"></div>
+          </div>
+          <ul id="editorFieldList" class="manual-field-list"></ul>
+          <div class="manual-fields-actions">
+            <button id="applyManualFieldsBtn" class="btn primary" type="button">
+              Apply Fields and Continue
+            </button>
+            <button id="clearEditorFieldsBtn" class="btn secondary" type="button">
+              Clear Placed Fields
+            </button>
+            <button id="downloadCurrentPdfBtn" class="btn secondary" type="button">
+              Download PDF to Edit Externally
+            </button>
+          </div>
         </section>
 
         <section class="card step-panel panel-worksheet" data-panel="worksheet" hidden>
@@ -93,31 +136,6 @@
             <button id="clearRowsBtn" class="btn secondary" type="button">Clear Rows</button>
           </div>
           -->
-          <section id="manualFieldsPanel" class="manual-fields-panel" hidden>
-            <h3 class="subheading">Manual Field Builder</h3>
-            <p class="hint compact-hint">
-              Add field names one by one, then build a worksheet from your custom list.
-            </p>
-            <div class="manual-fields-row">
-              <input
-                id="manualFieldInput"
-                type="text"
-                placeholder="Field name, for example FirstName"
-              />
-              <button id="addManualFieldBtn" class="btn secondary" type="button">
-                Add Field
-              </button>
-            </div>
-            <ul id="manualFieldList" class="manual-field-list"></ul>
-            <div class="manual-fields-actions">
-              <button id="buildManualWorksheetBtn" class="btn primary" type="button">
-                Build Worksheet from Manual Fields
-              </button>
-              <button id="clearManualFieldsBtn" class="btn secondary" type="button">
-                Clear Manual Fields
-              </button>
-            </div>
-          </section>
           <div id="worksheetContainer" class="mapping empty">
             Build worksheet to start entering table data.
           </div>
@@ -146,6 +164,7 @@
 
     </main>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

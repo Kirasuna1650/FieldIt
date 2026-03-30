@@ -11,32 +11,47 @@ const bulkModeNote = document.getElementById("bulkModeNote");
 const outputNameInput = document.getElementById("outputFileName");
 const statusEl = document.getElementById("status");
 const downloadLink = document.getElementById("downloadLink");
-const installBtn = document.getElementById("installBtn");
-const iosInstallHint = document.getElementById("iosInstallHint");
-const iosInstallDismissBtn = document.getElementById("iosInstallDismissBtn");
-const manualFieldsPanel = document.getElementById("manualFieldsPanel");
-const manualFieldInput = document.getElementById("manualFieldInput");
-const addManualFieldBtn = document.getElementById("addManualFieldBtn");
-const manualFieldList = document.getElementById("manualFieldList");
-const buildManualWorksheetBtn = document.getElementById("buildManualWorksheetBtn");
-const clearManualFieldsBtn = document.getElementById("clearManualFieldsBtn");
 const helpBtn = document.getElementById("helpBtn");
 const helpPopover = document.getElementById("helpPopover");
-const panelNavSlots = Array.from(document.querySelectorAll(".panel-nav-slot"));
+
+const editorStepTab = document.getElementById("editorStepTab");
+const editorFieldPrefix = document.getElementById("editorFieldPrefix");
+const editorFieldWidth = document.getElementById("editorFieldWidth");
+const editorFieldHeight = document.getElementById("editorFieldHeight");
+const editorCanvas = document.getElementById("editorCanvas");
+const editorClickLayer = document.getElementById("editorClickLayer");
+const editorFieldList = document.getElementById("editorFieldList");
+const applyManualFieldsBtn = document.getElementById("applyManualFieldsBtn");
+const clearEditorFieldsBtn = document.getElementById("clearEditorFieldsBtn");
+const downloadCurrentPdfBtn = document.getElementById("downloadCurrentPdfBtn");
+
 const stepTabs = Array.from(document.querySelectorAll(".step-tab"));
 const stepPanels = Array.from(document.querySelectorAll(".step-panel"));
+
 const BULK_MODE_ENABLED = false;
-const IOS_INSTALL_HINT_DISMISSED_KEY = "fieldit-ios-install-hint-dismissed";
 
 let detectedFields = [];
 let rowCount = 0;
 let currentDownloadUrl = "";
-let installPromptEvent = null;
-let manualFieldNames = [];
 let groupedFields = {
   staticFields: [],
   repeating: null
 };
+
+const editorState = {
+  pdfFile: null,
+  pdfDoc: null,
+  pageIndex: 0,
+  scale: 1.4,
+  viewport: null,
+  placedFields: [],
+  nextFieldIndex: 1
+};
+
+if (window.pdfjsLib) {
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+}
 
 function createColWithWidth(widthPx) {
   const col = document.createElement("col");
@@ -97,80 +112,15 @@ function setStatus(message, isError = false) {
   statusEl.classList.toggle("error", isError);
 }
 
-function normalizeFieldName(name) {
-  return String(name || "").trim();
-}
-
-function mapFieldNamesToSchema(names) {
-  return names.map((name) => ({ name, type: "manual" }));
-}
-
-function renderManualFieldList() {
-  if (!manualFieldList) {
+function setEditorVisible(visible) {
+  if (!editorStepTab) {
     return;
   }
 
-  if (!manualFieldNames.length) {
-    manualFieldList.innerHTML = "";
-    return;
+  editorStepTab.hidden = !visible;
+  if (!visible && editorStepTab.classList.contains("is-active")) {
+    setActiveStep("upload");
   }
-
-  manualFieldList.innerHTML = manualFieldNames
-    .map(
-      (name) => `
-      <li>
-        <span>${name}</span>
-        <button type="button" data-manual-remove="${name}">Remove</button>
-      </li>
-    `
-    )
-    .join("");
-}
-
-function setManualFieldsVisible(visible) {
-  if (!manualFieldsPanel) {
-    return;
-  }
-  manualFieldsPanel.hidden = !visible;
-}
-
-function isStandaloneMode() {
-  const displayModeStandalone =
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(display-mode: standalone)").matches;
-  return displayModeStandalone || window.navigator.standalone === true;
-}
-
-function isIosSafari() {
-  const ua = window.navigator.userAgent || "";
-  const isIos = /iPhone|iPad|iPod/i.test(ua);
-  const isSafari = /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
-  return isIos && isSafari;
-}
-
-function shouldShowIosInstallHint() {
-  const wasDismissed =
-    window.localStorage.getItem(IOS_INSTALL_HINT_DISMISSED_KEY) === "1";
-  return isIosSafari() && !isStandaloneMode() && !installPromptEvent && !wasDismissed;
-}
-
-function updateIosInstallHintVisibility() {
-  if (!iosInstallHint) {
-    return;
-  }
-  iosInstallHint.hidden = !shouldShowIosInstallHint();
-}
-
-function isBulkModeEnabled() {
-  return BULK_MODE_ENABLED && Boolean(bulkModeToggle?.checked);
-}
-
-function supportsBulkMode() {
-  return BULK_MODE_ENABLED && !groupedFields.repeating;
-}
-
-function getCurrentMode() {
-  return supportsBulkMode() && isBulkModeEnabled() ? "bulk" : "single";
 }
 
 function sortByName(items) {
@@ -267,7 +217,6 @@ function renderWorksheet(fields) {
   }
 
   groupedFields = splitFieldGroups(fields);
-  setManualFieldsVisible(false);
   renderStaticFields(groupedFields.staticFields);
 
   if (bulkModeToggle) {
@@ -413,15 +362,6 @@ function renumberRows() {
   });
 }
 
-function clearRows() {
-  const tbody = worksheetTable.querySelector("tbody");
-  if (!tbody) {
-    return;
-  }
-  tbody.innerHTML = "";
-  rowCount = 0;
-}
-
 function setHelpVisible(isVisible) {
   if (!helpPopover || !helpBtn) {
     return;
@@ -429,6 +369,18 @@ function setHelpVisible(isVisible) {
 
   helpPopover.hidden = !isVisible;
   helpBtn.setAttribute("aria-expanded", isVisible ? "true" : "false");
+}
+
+function isBulkModeEnabled() {
+  return BULK_MODE_ENABLED && Boolean(bulkModeToggle?.checked);
+}
+
+function supportsBulkMode() {
+  return BULK_MODE_ENABLED && !groupedFields.repeating;
+}
+
+function getCurrentMode() {
+  return supportsBulkMode() && isBulkModeEnabled() ? "bulk" : "single";
 }
 
 function collectRows() {
@@ -464,31 +416,6 @@ function collectRows() {
     return hasValue ? [rowPayload] : [];
   }
 
-  if (getCurrentMode() === "bulk") {
-    const rows = [];
-    tableRows.forEach((tr) => {
-      const rowPayload = { ...staticValues };
-      const filenameInput = tr.querySelector("input[data-filename='true']");
-      if (filenameInput?.value?.trim()) {
-        rowPayload.__filename = filenameInput.value.trim();
-      }
-
-      const fieldInputs = tr.querySelectorAll("input[data-field]");
-      fieldInputs.forEach((input) => {
-        rowPayload[input.dataset.field] = input.value;
-      });
-
-      const hasValue = Object.values(rowPayload).some(
-        (value) => String(value || "").trim().length > 0
-      );
-      if (hasValue) {
-        rows.push(rowPayload);
-      }
-    });
-
-    return rows;
-  }
-
   const firstRow = tableRows[0];
   if (!firstRow) {
     return [];
@@ -512,7 +439,103 @@ function collectRows() {
   return hasValue ? [rowPayload] : [];
 }
 
-async function detectFields() {
+function normalizePrefix(prefix) {
+  const cleaned = String(prefix || "")
+    .trim()
+    .replace(/[^A-Za-z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return cleaned || "manual_field";
+}
+
+function buildEditorFieldName() {
+  const prefix = normalizePrefix(editorFieldPrefix?.value);
+  const name = `${prefix}_${editorState.nextFieldIndex}`;
+  editorState.nextFieldIndex += 1;
+  return name;
+}
+
+function redrawEditorMarkers() {
+  if (!editorClickLayer || !editorState.viewport) {
+    return;
+  }
+
+  editorClickLayer.innerHTML = "";
+
+  editorState.placedFields.forEach((field) => {
+    const marker = document.createElement("div");
+    marker.className = "editor-marker";
+    marker.style.left = `${field.screenX}px`;
+    marker.style.top = `${field.screenY}px`;
+    marker.style.width = `${field.screenWidth}px`;
+    marker.style.height = `${field.screenHeight}px`;
+
+    const label = document.createElement("span");
+    label.className = "editor-marker-label";
+    label.textContent = field.name;
+    marker.appendChild(label);
+    editorClickLayer.appendChild(marker);
+  });
+
+  if (!editorFieldList) {
+    return;
+  }
+
+  editorFieldList.innerHTML = editorState.placedFields
+    .map(
+      (field) => `
+      <li>
+        <span>${field.name}</span>
+        <button type="button" data-editor-remove="${field.id}">Remove</button>
+      </li>
+    `
+    )
+    .join("");
+}
+
+async function renderEditorPdf(file) {
+  if (!window.pdfjsLib) {
+    throw new Error("PDF rendering is unavailable in this browser. Use external editor fallback.");
+  }
+
+  const bytes = await file.arrayBuffer();
+  const loadingTask = window.pdfjsLib.getDocument({ data: bytes });
+  editorState.pdfDoc = await loadingTask.promise;
+  const page = await editorState.pdfDoc.getPage(1);
+  editorState.viewport = page.getViewport({ scale: editorState.scale });
+
+  const ctx = editorCanvas.getContext("2d", { alpha: false });
+  editorCanvas.width = Math.floor(editorState.viewport.width);
+  editorCanvas.height = Math.floor(editorState.viewport.height);
+
+  editorClickLayer.style.width = `${editorCanvas.width}px`;
+  editorClickLayer.style.height = `${editorCanvas.height}px`;
+
+  await page.render({ canvasContext: ctx, viewport: editorState.viewport }).promise;
+}
+
+async function startManualEditor(pdfFile) {
+  editorState.pdfFile = pdfFile;
+  editorState.placedFields = [];
+  editorState.nextFieldIndex = 1;
+  redrawEditorMarkers();
+  setEditorVisible(true);
+
+  try {
+    setStatus("Opening field editor...");
+    await renderEditorPdf(pdfFile);
+    setActiveStep("editor");
+    setStatus("Tap on the PDF to place fields, then click Apply Fields and Continue.");
+  } catch (error) {
+    setEditorVisible(false);
+    setStatus(
+      "Interactive editor unavailable. Download the PDF, add fields in an external editor, then upload again.",
+      true
+    );
+  }
+}
+
+async function detectFields(allowManualPrompt = true) {
   const pdf = pdfInput.files?.[0];
 
   if (!pdf) {
@@ -539,23 +562,26 @@ async function detectFields() {
     detectedFields = data.fields || [];
     if (!detectedFields.length) {
       setStatus("No fillable fields found.", true);
-      const useManualFields = window.confirm(
-        "No fields were found in this PDF. Do you want to insert fields manually?"
-      );
 
-      if (useManualFields) {
-        setManualFieldsVisible(true);
-        setActiveStep("worksheet");
-        worksheetContainer.classList.add("empty");
-        worksheetContainer.textContent =
-          "Add manual field names, then build the worksheet.";
-        tableScroll.hidden = true;
-        setStatus("Manual field mode enabled. Add fields to continue.");
+      if (allowManualPrompt) {
+        const wantsManualInsertion = window.confirm(
+          "No fields found. Do you want to add fields manually using the visual editor?"
+        );
+
+        if (wantsManualInsertion) {
+          await startManualEditor(pdf);
+          return;
+        }
       }
 
+      setStatus(
+        "No fields found. Download the PDF, add fields in an external PDF editor, then upload again.",
+        true
+      );
       return;
     }
 
+    setEditorVisible(false);
     renderWorksheet(detectedFields);
     setStatus(
       `Detected ${detectedFields.length} fields. Categories are now grouped into vertical rows.`
@@ -563,6 +589,63 @@ async function detectFields() {
     setActiveStep("worksheet");
   } catch (error) {
     setStatus(error.message || "Could not detect fields.", true);
+  }
+}
+
+async function applyManualFields() {
+  if (!editorState.pdfFile) {
+    setStatus("Upload a PDF first.", true);
+    return;
+  }
+
+  if (!editorState.placedFields.length) {
+    setStatus("Place at least one field before applying.", true);
+    return;
+  }
+
+  try {
+    setStatus("Applying manual fields to PDF...");
+    const fd = new FormData();
+    fd.append("pdf", editorState.pdfFile);
+    fd.append(
+      "fields",
+      JSON.stringify(
+        editorState.placedFields.map((field) => ({
+          name: field.name,
+          pageIndex: 0,
+          x: field.pdfX,
+          y: field.pdfY,
+          width: field.pdfWidth,
+          height: field.pdfHeight
+        }))
+      )
+    );
+
+    const response = await fetch("/api/manual-fields", {
+      method: "POST",
+      body: fd
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: "Manual field apply failed." }));
+      throw new Error(data.error || "Manual field apply failed.");
+    }
+
+    const blob = await response.blob();
+    const sourceName = editorState.pdfFile.name.replace(/\.pdf$/i, "");
+    const nextFile = new File([blob], `${sourceName}-manual.pdf`, {
+      type: "application/pdf"
+    });
+
+    const transfer = new DataTransfer();
+    transfer.items.add(nextFile);
+    pdfInput.files = transfer.files;
+
+    editorState.pdfFile = nextFile;
+    setStatus("Manual fields applied. Re-detecting fields...");
+    await detectFields(false);
+  } catch (error) {
+    setStatus(error.message || "Could not apply manual fields.", true);
   }
 }
 
@@ -625,19 +708,12 @@ async function generateOutput() {
 
 stepTabs.forEach((tab) => {
   tab.addEventListener("click", () => {
+    if (tab.hidden) {
+      return;
+    }
     setActiveStep(tab.dataset.step);
   });
 });
-
-if (bulkModeToggle) {
-  // Reserved for future bulk-mode implementation.
-  // bulkModeToggle.addEventListener("change", () => {
-  //   if (!detectedFields.length) {
-  //     return;
-  //   }
-  //   renderWorksheet(detectedFields);
-  // });
-}
 
 helpBtn?.addEventListener("click", (event) => {
   event.stopPropagation();
@@ -658,122 +734,87 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-setActiveStep("upload");
-setHelpVisible(false);
-
-detectFieldsBtn.addEventListener("click", detectFields);
-generateBtn.addEventListener("click", generateOutput);
-
-addManualFieldBtn?.addEventListener("click", () => {
-  const fieldName = normalizeFieldName(manualFieldInput?.value);
-  if (!fieldName) {
-    return;
-  }
-
-  if (manualFieldNames.includes(fieldName)) {
-    setStatus("That manual field already exists.", true);
-    return;
-  }
-
-  manualFieldNames.push(fieldName);
-  if (manualFieldInput) {
-    manualFieldInput.value = "";
-    manualFieldInput.focus();
-  }
-  renderManualFieldList();
-});
-
-manualFieldInput?.addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    addManualFieldBtn?.click();
+pdfInput?.addEventListener("change", () => {
+  setEditorVisible(false);
+  editorState.pdfFile = pdfInput.files?.[0] || null;
+  editorState.placedFields = [];
+  editorState.nextFieldIndex = 1;
+  if (editorFieldList) {
+    editorFieldList.innerHTML = "";
   }
 });
 
-manualFieldList?.addEventListener("click", (event) => {
+editorClickLayer?.addEventListener("click", (event) => {
+  if (!editorState.viewport || !editorState.pdfFile) {
+    return;
+  }
+
+  const rect = editorClickLayer.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const width = Math.max(48, Number(editorFieldWidth?.value) || 160);
+  const height = Math.max(18, Number(editorFieldHeight?.value) || 24);
+
+  const field = {
+    id: `${Date.now()}_${Math.random()}`,
+    name: buildEditorFieldName(),
+    screenX: x,
+    screenY: y,
+    screenWidth: width * editorState.scale,
+    screenHeight: height * editorState.scale,
+    pdfX: x / editorState.scale,
+    pdfY: (editorCanvas.height - y - height * editorState.scale) / editorState.scale,
+    pdfWidth: width,
+    pdfHeight: height
+  };
+
+  editorState.placedFields.push(field);
+  redrawEditorMarkers();
+});
+
+editorFieldList?.addEventListener("click", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) {
     return;
   }
 
-  const removeFieldName = target.dataset.manualRemove;
-  if (!removeFieldName) {
+  const id = target.dataset.editorRemove;
+  if (!id) {
     return;
   }
 
-  manualFieldNames = manualFieldNames.filter((name) => name !== removeFieldName);
-  renderManualFieldList();
+  editorState.placedFields = editorState.placedFields.filter((field) => field.id !== id);
+  redrawEditorMarkers();
 });
 
-buildManualWorksheetBtn?.addEventListener("click", () => {
-  if (!manualFieldNames.length) {
-    setStatus("Add at least one manual field first.", true);
+applyManualFieldsBtn?.addEventListener("click", applyManualFields);
+
+clearEditorFieldsBtn?.addEventListener("click", () => {
+  editorState.placedFields = [];
+  redrawEditorMarkers();
+  setStatus("Placed fields cleared.");
+});
+
+downloadCurrentPdfBtn?.addEventListener("click", () => {
+  const pdf = editorState.pdfFile || pdfInput.files?.[0];
+  if (!pdf) {
+    setStatus("Upload a PDF first.", true);
     return;
   }
 
-  detectedFields = mapFieldNamesToSchema(manualFieldNames);
-  renderWorksheet(detectedFields);
-  setStatus(`Manual worksheet built with ${manualFieldNames.length} fields.`);
+  const url = URL.createObjectURL(pdf);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = pdf.name || "template.pdf";
+  link.click();
+  URL.revokeObjectURL(url);
+
+  setStatus("PDF downloaded. Add fields in your editor, then upload it again.");
 });
 
-clearManualFieldsBtn?.addEventListener("click", () => {
-  manualFieldNames = [];
-  renderManualFieldList();
-  setStatus("Manual fields cleared.");
-});
+setActiveStep("upload");
+setHelpVisible(false);
+setEditorVisible(false);
 
-installBtn?.addEventListener("click", async () => {
-  if (!installPromptEvent) {
-    setStatus("Install prompt is not available on this device/browser.", true);
-    return;
-  }
-
-  installPromptEvent.prompt();
-  const choice = await installPromptEvent.userChoice;
-  installPromptEvent = null;
-  installBtn.hidden = true;
-
-  if (choice.outcome === "accepted") {
-    setStatus("App install started.");
-    return;
-  }
-
-  setStatus("Install dismissed. You can continue in the browser.");
-});
-
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  installPromptEvent = event;
-  if (installBtn) {
-    installBtn.hidden = false;
-  }
-  updateIosInstallHintVisibility();
-});
-
-window.addEventListener("appinstalled", () => {
-  installPromptEvent = null;
-  if (installBtn) {
-    installBtn.hidden = true;
-  }
-  if (iosInstallHint) {
-    iosInstallHint.hidden = true;
-  }
-  setStatus("App installed. Launch it from your home screen.");
-});
-
-iosInstallDismissBtn?.addEventListener("click", () => {
-  window.localStorage.setItem(IOS_INSTALL_HINT_DISMISSED_KEY, "1");
-  if (iosInstallHint) {
-    iosInstallHint.hidden = true;
-  }
-});
-
-updateIosInstallHintVisibility();
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      // App remains functional even if service worker registration fails.
-    });
-  });
-}
+detectFieldsBtn.addEventListener("click", () => detectFields(true));
+generateBtn.addEventListener("click", generateOutput);
