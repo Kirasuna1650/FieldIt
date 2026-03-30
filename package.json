@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "dev": "node server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "mobile:start": "npm run start --prefix mobile",
+    "mobile:android": "npm run android --prefix mobile",
+    "mobile:ios": "npm run ios --prefix mobile",
+    "mobile:web": "npm run web --prefix mobile"
   },
   "dependencies": {
     "express": "^4.21.2",

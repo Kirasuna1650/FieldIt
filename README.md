@@ -53,6 +53,37 @@ docker compose up -d --build
 docker compose down
 ```
 
+## Mobile App (iOS + Android via Expo)
+
+A cross-platform starter app now lives in `mobile/` and talks to the same backend API.
+
+For full mobile run and download/distribution instructions, see `mobile/README.md`.
+
+1. Start backend API from project root:
+
+```bash
+npm run dev
+```
+
+2. In a second terminal, start mobile app:
+
+```bash
+npm run mobile:start
+```
+
+3. Launch platform target:
+
+```bash
+npm run mobile:android
+npm run mobile:ios
+```
+
+Notes:
+
+- iOS simulator requires macOS/Xcode.
+- Android emulator usually needs backend URL `http://10.0.2.2:3000`.
+- Physical devices should use your machine LAN IP, for example `http://192.168.1.20:3000`.
+
 ## CasaOS Notes
 
 - Copy this project folder to your Debian server.
