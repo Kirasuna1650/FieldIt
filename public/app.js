@@ -520,7 +520,15 @@ function createPlacedFieldFromScreenRect(rect) {
 }
 
 function ensureDraftMarker() {
-  if (editorState.draftMarkerEl || !editorClickLayer) {
+  if (!editorClickLayer) {
+    return;
+  }
+
+  if (editorState.draftMarkerEl && !editorState.draftMarkerEl.isConnected) {
+    editorState.draftMarkerEl = null;
+  }
+
+  if (editorState.draftMarkerEl) {
     return;
   }
 
