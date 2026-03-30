@@ -24,6 +24,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
@@ -149,18 +153,8 @@ body {
   grid-template-rows: auto 1fr;
 }
 
-.rail-preview-card {
-  display: grid;
-  align-content: start;
-  gap: 0.35rem;
-}
-
 .compact-hint {
   margin: 0;
-}
-
-.rail-preview-btn {
-  margin-top: 0.35rem;
 }
 
 .sidebar-card h2 {
@@ -241,10 +235,6 @@ body {
 h2 {
   margin: 0 0 0.75rem;
   color: var(--accent-blue-strong);
-
-[hidden] {
-  display: none !important;
-}
 }
 
 .hint {
@@ -424,53 +414,6 @@ h2 {
   margin-top: 0;
 }
 
-.preview-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 30;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-}
-
-.preview-shell {
-  width: min(1080px, 100%);
-  height: min(86vh, 920px);
-  background: #ffffff;
-  border-radius: 6px;
-  border: 1px solid var(--vscode-border-strong);
-  display: grid;
-  grid-template-rows: auto 1fr;
-  overflow: hidden;
-}
-
-.preview-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  padding: 0.6rem 0.75rem;
-  border-bottom: 1px solid var(--vscode-border);
-  background: #f8fbff;
-}
-
-.preview-header h3 {
-  margin: 0;
-  font-size: 0.92rem;
-  color: var(--accent-blue-strong);
-}
-
-.preview-header .btn {
-  margin-top: 0;
-}
-
-.preview-frame {
-  width: 100%;
-  height: 100%;
-  border: none;
-  background: #e6edf6;
-}
 
 .subheading {
   margin: 0 0 0.6rem;
@@ -692,10 +635,6 @@ body.is-col-resizing {
     grid-template-columns: 1fr;
   }
 
-  .preview-shell {
-    height: min(88dvh, 920px);
-  }
-
   .panel-head {
     margin-bottom: 0.38rem;
   }
@@ -799,14 +738,6 @@ body.is-col-resizing {
   .card {
     padding: 0.62rem;
     border-radius: 4px;
-  }
-
-  .preview-overlay {
-    padding: 0.45rem;
-  }
-
-  .preview-shell {
-    height: min(92dvh, 920px);
   }
 
   .workflow-tabs {

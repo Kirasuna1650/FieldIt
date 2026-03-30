@@ -11,11 +11,6 @@ const bulkModeNote = document.getElementById("bulkModeNote");
 const outputNameInput = document.getElementById("outputFileName");
 const statusEl = document.getElementById("status");
 const downloadLink = document.getElementById("downloadLink");
-const previewCard = document.getElementById("previewCard");
-const previewBtn = document.getElementById("previewBtn");
-const previewOverlay = document.getElementById("previewOverlay");
-const previewFrame = document.getElementById("previewFrame");
-const closePreviewBtn = document.getElementById("closePreviewBtn");
 const installBtn = document.getElementById("installBtn");
 const iosInstallHint = document.getElementById("iosInstallHint");
 const iosInstallDismissBtn = document.getElementById("iosInstallDismissBtn");
@@ -36,7 +31,6 @@ const IOS_INSTALL_HINT_DISMISSED_KEY = "fieldit-ios-install-hint-dismissed";
 let detectedFields = [];
 let rowCount = 0;
 let currentDownloadUrl = "";
-let currentPreviewUrl = "";
 let installPromptEvent = null;
 let manualFieldNames = [];
 let groupedFields = {
@@ -103,15 +97,6 @@ function setStatus(message, isError = false) {
   statusEl.classList.toggle("error", isError);
 }
 
-function setPreviewVisible(visible) {
-  if (previewCard) {
-    previewCard.hidden = !visible;
-  }
-  if (previewBtn) {
-    previewBtn.disabled = !visible;
-  }
-}
-
 function normalizeFieldName(name) {
   return String(name || "").trim();
 }
@@ -147,29 +132,6 @@ function setManualFieldsVisible(visible) {
     return;
   }
   manualFieldsPanel.hidden = !visible;
-}
-
-function openPreview(url) {
-  if (!previewOverlay || !previewFrame) {
-    return;
-  }
-
-  previewFrame.src = url;
-  previewOverlay.hidden = false;
-}
-
-function closePreview() {
-  if (!previewOverlay || !previewFrame) {
-    return;
-  }
-
-  previewOverlay.hidden = true;
-  previewFrame.src = "about:blank";
-
-  if (currentPreviewUrl) {
-    URL.revokeObjectURL(currentPreviewUrl);
-    currentPreviewUrl = "";
-  }
 }
 
 function isStandaloneMode() {
@@ -305,7 +267,6 @@ function renderWorksheet(fields) {
   }
 
   groupedFields = splitFieldGroups(fields);
-  setPreviewVisible(true);
   setManualFieldsVisible(false);
   renderStaticFields(groupedFields.staticFields);
 
@@ -577,7 +538,6 @@ async function detectFields() {
 
     detectedFields = data.fields || [];
     if (!detectedFields.length) {
-      setPreviewVisible(false);
       setStatus("No fillable fields found.", true);
       const useManualFields = window.confirm(
         "No fields were found in this PDF. Do you want to insert fields manually?"
@@ -663,48 +623,6 @@ async function generateOutput() {
   }
 }
 
-async function previewOutput() {
-  const pdf = pdfInput.files?.[0];
-
-  if (!pdf) {
-    setStatus("Select a fillable PDF file first.", true);
-    return;
-  }
-
-  const rows = collectRows();
-  if (!rows.length) {
-    setStatus("Enter values in the worksheet before previewing.", true);
-    return;
-  }
-
-  try {
-    setStatus("Rendering preview...");
-    closePreview();
-
-    const fd = new FormData();
-    fd.append("pdf", pdf);
-    fd.append("rows", JSON.stringify(rows));
-
-    const response = await fetch("/api/generate", {
-      method: "POST",
-      body: fd
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.json();
-      throw new Error(errorBody.error || "Preview failed.");
-    }
-
-    const blob = await response.blob();
-    const previewUrl = URL.createObjectURL(blob);
-    currentPreviewUrl = previewUrl;
-    openPreview(previewUrl);
-    setStatus("Preview ready. Click outside the preview to close.");
-  } catch (error) {
-    setStatus(error.message || "Could not preview PDF.", true);
-  }
-}
-
 stepTabs.forEach((tab) => {
   tab.addEventListener("click", () => {
     setActiveStep(tab.dataset.step);
@@ -737,30 +655,14 @@ document.addEventListener("click", () => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     setHelpVisible(false);
-    closePreview();
   }
 });
 
 setActiveStep("upload");
 setHelpVisible(false);
-setPreviewVisible(false);
-
-pdfInput?.addEventListener("change", () => {
-  closePreview();
-  setPreviewVisible(false);
-});
 
 detectFieldsBtn.addEventListener("click", detectFields);
 generateBtn.addEventListener("click", generateOutput);
-previewBtn?.addEventListener("click", previewOutput);
-
-closePreviewBtn?.addEventListener("click", closePreview);
-
-previewOverlay?.addEventListener("click", (event) => {
-  if (event.target === previewOverlay) {
-    closePreview();
-  }
-});
 
 addManualFieldBtn?.addEventListener("click", () => {
   const fieldName = normalizeFieldName(manualFieldInput?.value);

@@ -41,13 +41,6 @@
           <h2>Live Status</h2>
           <p id="status" class="status" aria-live="polite"></p>
         </section>
-        <section id="previewCard" class="sidebar-card rail-preview-card" hidden>
-          <h2>Preview</h2>
-          <p class="hint compact-hint">Preview current worksheet input before download.</p>
-          <button id="previewBtn" class="btn secondary rail-preview-btn" type="button">
-            Preview Field
-          </button>
-        </section>
       </aside>
 
       <section class="dashboard-main">
@@ -152,16 +145,6 @@
       </section>
 
     </main>
-
-    <section id="previewOverlay" class="preview-overlay" hidden>
-      <div class="preview-shell" role="dialog" aria-modal="true" aria-label="PDF preview">
-        <div class="preview-header">
-          <h3>Field Preview</h3>
-          <button id="closePreviewBtn" class="btn secondary" type="button">Close</button>
-        </div>
-        <iframe id="previewFrame" class="preview-frame" title="Filled PDF preview"></iframe>
-      </div>
-    </section>
 
     <script src="/app.js"></script>
   </body>
