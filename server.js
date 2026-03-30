@@ -79,7 +79,7 @@ function setPdfFieldValue(field, value) {
   }
 }
 
-async function generateFilledPdf(templatePdfBytes, row, rowIndex) {
+async function generateFilledPdf(templatePdfBytes, row, rowIndex, options = {}) {
   const pdfDoc = await PDFDocument.load(templatePdfBytes);
   const form = pdfDoc.getForm();
   const fields = form.getFields();
@@ -97,6 +97,10 @@ async function generateFilledPdf(templatePdfBytes, row, rowIndex) {
     } catch (error) {
       // Ignore incompatible values for individual fields to keep bulk generation running.
     }
+  }
+
+  if (options.flatten === true) {
+    form.flatten();
   }
 
   const pdfBytes = await pdfDoc.save();
@@ -175,8 +179,8 @@ async function createManualFieldsPdf(templatePdfBytes, fieldSpecs) {
       y,
       width,
       height,
-      borderColor: rgb(0.26, 0.53, 0.86),
-      borderWidth: 1,
+      borderColor: rgb(1, 1, 1),
+      borderWidth: 0,
       textColor: rgb(0.08, 0.19, 0.31)
     });
   }
@@ -239,7 +243,8 @@ app.post(
       const { filename, pdfBytes } = await generateFilledPdf(
         pdfFile.buffer,
         filteredRows[0],
-        0
+        0,
+        { flatten: isTruthy(req.body.flatten) }
       );
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader(
