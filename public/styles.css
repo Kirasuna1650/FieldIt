@@ -659,6 +659,78 @@ body.is-col-resizing {
   color: var(--vscode-danger);
 }
 
+.loading-overlay,
+.rename-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  padding: 0.8rem;
+}
+
+.loading-dialog,
+.rename-dialog {
+  width: min(420px, 100%);
+  background: #ffffff;
+  border: 1px solid var(--vscode-border);
+  border-radius: 6px;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2);
+  padding: 0.95rem;
+}
+
+.loading-dialog {
+  width: min(320px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 0.7rem;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 3px solid #d5e9fd;
+  border-top-color: #0b5fa5;
+  animation: spin 0.9s linear infinite;
+}
+
+.loading-dialog p {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-blue-strong);
+}
+
+.rename-dialog h3 {
+  margin: 0 0 0.35rem;
+  color: var(--accent-blue-strong);
+}
+
+.rename-dialog .hint {
+  margin-bottom: 0.75rem;
+}
+
+.rename-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.rename-actions .btn {
+  margin-top: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 1100px) {
   body {
     height: auto;

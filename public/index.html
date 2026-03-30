@@ -79,7 +79,7 @@
             <div class="panel-nav-slot"></div>
           </div>
           <p class="hint">
-            Tap the PDF preview to place fields. Field names auto-increment based on the prefix.
+            Tap to place a field or drag to draw one. After placement, you can rename the field before continuing.
           </p>
           <div class="editor-toolbar">
             <label class="editor-label">
@@ -163,6 +163,28 @@
       </section>
 
     </main>
+
+    <section id="loadingOverlay" class="loading-overlay" hidden aria-live="polite" aria-busy="true">
+      <div class="loading-dialog" role="status" aria-atomic="true">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <p id="loadingMessage">Uploading PDF...</p>
+      </div>
+    </section>
+
+    <section id="fieldRenameModal" class="rename-overlay" hidden aria-modal="true" role="dialog" aria-labelledby="fieldRenameTitle">
+      <div class="rename-dialog">
+        <h3 id="fieldRenameTitle">Rename New Field</h3>
+        <p class="hint">Edit the field name for the box you just placed.</p>
+        <label class="file-control">
+          <span>Field Name</span>
+          <input id="fieldRenameInput" type="text" maxlength="64" />
+        </label>
+        <div class="rename-actions">
+          <button id="fieldRenameCancelBtn" class="btn secondary" type="button">Keep Auto Name</button>
+          <button id="fieldRenameSaveBtn" class="btn primary" type="button">Save Name</button>
+        </div>
+      </div>
+    </section>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="/app.js"></script>

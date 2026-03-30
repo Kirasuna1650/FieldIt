@@ -13,6 +13,12 @@ const statusEl = document.getElementById("status");
 const downloadLink = document.getElementById("downloadLink");
 const helpBtn = document.getElementById("helpBtn");
 const helpPopover = document.getElementById("helpPopover");
+const loadingOverlay = document.getElementById("loadingOverlay");
+const loadingMessage = document.getElementById("loadingMessage");
+const fieldRenameModal = document.getElementById("fieldRenameModal");
+const fieldRenameInput = document.getElementById("fieldRenameInput");
+const fieldRenameCancelBtn = document.getElementById("fieldRenameCancelBtn");
+const fieldRenameSaveBtn = document.getElementById("fieldRenameSaveBtn");
 
 const editorStepTab = document.getElementById("editorStepTab");
 const editorFieldPrefix = document.getElementById("editorFieldPrefix");
@@ -34,6 +40,7 @@ const DRAG_MOVE_THRESHOLD = 6;
 let detectedFields = [];
 let rowCount = 0;
 let currentDownloadUrl = "";
+let loadingCounter = 0;
 let groupedFields = {
   staticFields: [],
   repeating: null
@@ -48,7 +55,8 @@ const editorState = {
   placedFields: [],
   nextFieldIndex: 1,
   dragState: null,
-  draftMarkerEl: null
+  draftMarkerEl: null,
+  pendingRenameFieldId: null
 };
 
 if (window.pdfjsLib) {
@@ -113,6 +121,29 @@ function setActiveStep(stepName) {
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
   statusEl.classList.toggle("error", isError);
+}
+
+function showLoading(message) {
+  loadingCounter += 1;
+
+  if (loadingMessage && message) {
+    loadingMessage.textContent = message;
+  }
+
+  if (loadingOverlay) {
+    loadingOverlay.hidden = false;
+  }
+}
+
+function hideLoading() {
+  loadingCounter = Math.max(0, loadingCounter - 1);
+  if (loadingCounter > 0) {
+    return;
+  }
+
+  if (loadingOverlay) {
+    loadingOverlay.hidden = true;
+  }
 }
 
 function setEditorVisible(visible) {
@@ -451,6 +482,83 @@ function normalizePrefix(prefix) {
   return cleaned || "manual_field";
 }
 
+function sanitizeFieldName(name) {
+  return String(name || "")
+    .trim()
+    .replace(/[^A-Za-z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function getUniqueFieldName(rawName, fieldIdToExclude) {
+  const baseName = sanitizeFieldName(rawName);
+  if (!baseName) {
+    return "";
+  }
+
+  const existing = new Set(
+    editorState.placedFields
+      .filter((field) => field.id !== fieldIdToExclude)
+      .map((field) => field.name)
+  );
+
+  if (!existing.has(baseName)) {
+    return baseName;
+  }
+
+  let suffix = 2;
+  while (existing.has(`${baseName}_${suffix}`)) {
+    suffix += 1;
+  }
+
+  return `${baseName}_${suffix}`;
+}
+
+function openFieldRenameModal(field) {
+  if (!fieldRenameModal || !fieldRenameInput) {
+    return;
+  }
+
+  editorState.pendingRenameFieldId = field.id;
+  fieldRenameInput.value = field.name;
+  fieldRenameModal.hidden = false;
+  fieldRenameInput.focus();
+  fieldRenameInput.select();
+}
+
+function closeFieldRenameModal() {
+  if (fieldRenameModal) {
+    fieldRenameModal.hidden = true;
+  }
+  editorState.pendingRenameFieldId = null;
+}
+
+function saveFieldRename() {
+  const fieldId = editorState.pendingRenameFieldId;
+  if (!fieldId) {
+    closeFieldRenameModal();
+    return;
+  }
+
+  const idx = editorState.placedFields.findIndex((field) => field.id === fieldId);
+  if (idx === -1) {
+    closeFieldRenameModal();
+    return;
+  }
+
+  const uniqueName = getUniqueFieldName(fieldRenameInput?.value, fieldId);
+  if (!uniqueName) {
+    setStatus("Field name must include letters, numbers, or underscores.", true);
+    fieldRenameInput?.focus();
+    return;
+  }
+
+  editorState.placedFields[idx].name = uniqueName;
+  redrawEditorMarkers();
+  setStatus(`Field name saved as ${uniqueName}.`);
+  closeFieldRenameModal();
+}
+
 function buildEditorFieldName() {
   const prefix = normalizePrefix(editorFieldPrefix?.value);
   const name = `${prefix}_${editorState.nextFieldIndex}`;
@@ -671,6 +779,7 @@ async function detectFields(allowManualPrompt = true) {
   }
 
   try {
+    showLoading("Uploading PDF and scanning fields...");
     setStatus("Reading PDF fields and building worksheet...");
 
     const fd = new FormData();
@@ -716,6 +825,8 @@ async function detectFields(allowManualPrompt = true) {
     setActiveStep("worksheet");
   } catch (error) {
     setStatus(error.message || "Could not detect fields.", true);
+  } finally {
+    hideLoading();
   }
 }
 
@@ -731,6 +842,7 @@ async function applyManualFields() {
   }
 
   try {
+    showLoading("Applying manual fields to uploaded PDF...");
     setStatus("Applying manual fields to PDF...");
     const fd = new FormData();
     fd.append("pdf", editorState.pdfFile);
@@ -773,6 +885,8 @@ async function applyManualFields() {
     await detectFields(false);
   } catch (error) {
     setStatus(error.message || "Could not apply manual fields.", true);
+  } finally {
+    hideLoading();
   }
 }
 
@@ -923,6 +1037,7 @@ editorClickLayer?.addEventListener("pointerup", (event) => {
   editorState.dragState = null;
   hideDraftMarker();
   redrawEditorMarkers();
+  openFieldRenameModal(field);
 
   if (editorClickLayer.hasPointerCapture(event.pointerId)) {
     editorClickLayer.releasePointerCapture(event.pointerId);
@@ -963,6 +1078,23 @@ editorFieldList?.addEventListener("click", (event) => {
 
   editorState.placedFields = editorState.placedFields.filter((field) => field.id !== id);
   redrawEditorMarkers();
+});
+
+fieldRenameSaveBtn?.addEventListener("click", saveFieldRename);
+
+fieldRenameCancelBtn?.addEventListener("click", closeFieldRenameModal);
+
+fieldRenameInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    saveFieldRename();
+    return;
+  }
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeFieldRenameModal();
+  }
 });
 
 applyManualFieldsBtn?.addEventListener("click", applyManualFields);
