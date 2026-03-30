@@ -11,6 +11,7 @@ const bulkModeNote = document.getElementById("bulkModeNote");
 const outputNameInput = document.getElementById("outputFileName");
 const statusEl = document.getElementById("status");
 const downloadLink = document.getElementById("downloadLink");
+const previewCard = document.getElementById("previewCard");
 const previewBtn = document.getElementById("previewBtn");
 const previewOverlay = document.getElementById("previewOverlay");
 const previewFrame = document.getElementById("previewFrame");
@@ -100,6 +101,15 @@ function setActiveStep(stepName) {
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
   statusEl.classList.toggle("error", isError);
+}
+
+function setPreviewVisible(visible) {
+  if (previewCard) {
+    previewCard.hidden = !visible;
+  }
+  if (previewBtn) {
+    previewBtn.disabled = !visible;
+  }
 }
 
 function normalizeFieldName(name) {
@@ -295,6 +305,7 @@ function renderWorksheet(fields) {
   }
 
   groupedFields = splitFieldGroups(fields);
+  setPreviewVisible(true);
   setManualFieldsVisible(false);
   renderStaticFields(groupedFields.staticFields);
 
@@ -566,6 +577,7 @@ async function detectFields() {
 
     detectedFields = data.fields || [];
     if (!detectedFields.length) {
+      setPreviewVisible(false);
       setStatus("No fillable fields found.", true);
       const useManualFields = window.confirm(
         "No fields were found in this PDF. Do you want to insert fields manually?"
@@ -731,6 +743,12 @@ document.addEventListener("keydown", (event) => {
 
 setActiveStep("upload");
 setHelpVisible(false);
+setPreviewVisible(false);
+
+pdfInput?.addEventListener("change", () => {
+  closePreview();
+  setPreviewVisible(false);
+});
 
 detectFieldsBtn.addEventListener("click", detectFields);
 generateBtn.addEventListener("click", generateOutput);
