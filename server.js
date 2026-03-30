@@ -179,10 +179,16 @@ async function createManualFieldsPdf(templatePdfBytes, fieldSpecs) {
       y,
       width,
       height,
-      borderColor: rgb(1, 1, 1),
       borderWidth: 0,
-      textColor: rgb(0.08, 0.19, 0.31)
+      borderColor: undefined,
+      backgroundColor: undefined,
+      textColor: rgb(0.08, 0.19, 0.31),
+      // No underline, no visible widget
     });
+    // Make the field invisible (no border, no background, no underline)
+    textField.enableScrolling();
+    // Optionally, shrink font size to fit (pdf-lib does not support auto font size, but we can set a small default)
+    textField.updateAppearances(font => font);
   }
 
   return pdfDoc.save();
