@@ -458,6 +458,8 @@ h2 {
 .editor-click-layer {
   position: absolute;
   inset: 0;
+  cursor: crosshair;
+  touch-action: none;
 }
 
 .editor-marker {
@@ -465,6 +467,12 @@ h2 {
   border: 1px solid #2f74bb;
   background: rgba(47, 116, 187, 0.15);
   pointer-events: none;
+}
+
+.editor-marker-draft {
+  border-style: dashed;
+  border-color: #1c5b96;
+  background: rgba(47, 116, 187, 0.08);
 }
 
 .editor-marker-label {

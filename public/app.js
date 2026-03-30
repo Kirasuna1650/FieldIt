@@ -29,6 +29,7 @@ const stepTabs = Array.from(document.querySelectorAll(".step-tab"));
 const stepPanels = Array.from(document.querySelectorAll(".step-panel"));
 
 const BULK_MODE_ENABLED = false;
+const DRAG_MOVE_THRESHOLD = 6;
 
 let detectedFields = [];
 let rowCount = 0;
@@ -45,7 +46,9 @@ const editorState = {
   scale: 1.4,
   viewport: null,
   placedFields: [],
-  nextFieldIndex: 1
+  nextFieldIndex: 1,
+  dragState: null,
+  draftMarkerEl: null
 };
 
 if (window.pdfjsLib) {
@@ -455,6 +458,116 @@ function buildEditorFieldName() {
   return name;
 }
 
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getEditorPointerPoint(event) {
+  const rect = editorClickLayer.getBoundingClientRect();
+  const x = clamp(event.clientX - rect.left, 0, editorCanvas.width);
+  const y = clamp(event.clientY - rect.top, 0, editorCanvas.height);
+  return { x, y };
+}
+
+function getDefaultPdfFieldSize() {
+  const width = Math.max(48, Number(editorFieldWidth?.value) || 160);
+  const height = Math.max(18, Number(editorFieldHeight?.value) || 24);
+  return { width, height };
+}
+
+function getDefaultScreenRect(anchorX, anchorY) {
+  const defaultSize = getDefaultPdfFieldSize();
+  return {
+    left: anchorX,
+    top: anchorY,
+    width: defaultSize.width * editorState.scale,
+    height: defaultSize.height * editorState.scale
+  };
+}
+
+function normalizeScreenRect(rect) {
+  const maxWidth = editorCanvas.width;
+  const maxHeight = editorCanvas.height;
+
+  const left = clamp(rect.left, 0, maxWidth);
+  const top = clamp(rect.top, 0, maxHeight);
+  const right = clamp(left + rect.width, left + 1, maxWidth);
+  const bottom = clamp(top + rect.height, top + 1, maxHeight);
+
+  return {
+    left,
+    top,
+    width: right - left,
+    height: bottom - top
+  };
+}
+
+function createPlacedFieldFromScreenRect(rect) {
+  const normalized = normalizeScreenRect(rect);
+
+  return {
+    id: `${Date.now()}_${Math.random()}`,
+    name: buildEditorFieldName(),
+    screenX: normalized.left,
+    screenY: normalized.top,
+    screenWidth: normalized.width,
+    screenHeight: normalized.height,
+    pdfX: normalized.left / editorState.scale,
+    pdfY: (editorCanvas.height - normalized.top - normalized.height) / editorState.scale,
+    pdfWidth: normalized.width / editorState.scale,
+    pdfHeight: normalized.height / editorState.scale
+  };
+}
+
+function ensureDraftMarker() {
+  if (editorState.draftMarkerEl || !editorClickLayer) {
+    return;
+  }
+
+  const marker = document.createElement("div");
+  marker.className = "editor-marker editor-marker-draft";
+  marker.hidden = true;
+  editorClickLayer.appendChild(marker);
+  editorState.draftMarkerEl = marker;
+}
+
+function showDraftMarker(rect) {
+  ensureDraftMarker();
+  if (!editorState.draftMarkerEl) {
+    return;
+  }
+
+  const normalized = normalizeScreenRect(rect);
+  const marker = editorState.draftMarkerEl;
+  marker.hidden = false;
+  marker.style.left = `${normalized.left}px`;
+  marker.style.top = `${normalized.top}px`;
+  marker.style.width = `${normalized.width}px`;
+  marker.style.height = `${normalized.height}px`;
+}
+
+function hideDraftMarker() {
+  if (editorState.draftMarkerEl) {
+    editorState.draftMarkerEl.hidden = true;
+  }
+}
+
+function getDragRect(dragState) {
+  const deltaX = dragState.currentX - dragState.startX;
+  const deltaY = dragState.currentY - dragState.startY;
+
+  if (!dragState.moved) {
+    return getDefaultScreenRect(dragState.startX, dragState.startY);
+  }
+
+  return {
+    left: Math.min(dragState.startX, dragState.currentX),
+    top: Math.min(dragState.startY, dragState.currentY),
+    width: Math.max(24, Math.abs(deltaX)),
+    height: Math.max(14, Math.abs(deltaY))
+  };
+}
+
 function redrawEditorMarkers() {
   if (!editorClickLayer || !editorState.viewport) {
     return;
@@ -518,14 +631,16 @@ async function startManualEditor(pdfFile) {
   editorState.pdfFile = pdfFile;
   editorState.placedFields = [];
   editorState.nextFieldIndex = 1;
+  editorState.dragState = null;
   redrawEditorMarkers();
+  hideDraftMarker();
   setEditorVisible(true);
 
   try {
     setStatus("Opening field editor...");
     await renderEditorPdf(pdfFile);
     setActiveStep("editor");
-    setStatus("Tap on the PDF to place fields, then click Apply Fields and Continue.");
+    setStatus("Tap to place default-sized fields, or click/tap and drag to draw field boxes.");
   } catch (error) {
     setEditorVisible(false);
     setStatus(
@@ -739,37 +854,88 @@ pdfInput?.addEventListener("change", () => {
   editorState.pdfFile = pdfInput.files?.[0] || null;
   editorState.placedFields = [];
   editorState.nextFieldIndex = 1;
+  editorState.dragState = null;
+  hideDraftMarker();
   if (editorFieldList) {
     editorFieldList.innerHTML = "";
   }
 });
 
-editorClickLayer?.addEventListener("click", (event) => {
-  if (!editorState.viewport || !editorState.pdfFile) {
+editorClickLayer?.addEventListener("pointerdown", (event) => {
+  if (!editorState.viewport || !editorState.pdfFile || event.button > 0) {
     return;
   }
 
-  const rect = editorClickLayer.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  const width = Math.max(48, Number(editorFieldWidth?.value) || 160);
-  const height = Math.max(18, Number(editorFieldHeight?.value) || 24);
+  const point = getEditorPointerPoint(event);
 
-  const field = {
-    id: `${Date.now()}_${Math.random()}`,
-    name: buildEditorFieldName(),
-    screenX: x,
-    screenY: y,
-    screenWidth: width * editorState.scale,
-    screenHeight: height * editorState.scale,
-    pdfX: x / editorState.scale,
-    pdfY: (editorCanvas.height - y - height * editorState.scale) / editorState.scale,
-    pdfWidth: width,
-    pdfHeight: height
+  editorState.dragState = {
+    pointerId: event.pointerId,
+    startX: point.x,
+    startY: point.y,
+    currentX: point.x,
+    currentY: point.y,
+    moved: false
   };
 
+  editorClickLayer.setPointerCapture(event.pointerId);
+  showDraftMarker(getDefaultScreenRect(point.x, point.y));
+  event.preventDefault();
+});
+
+editorClickLayer?.addEventListener("pointermove", (event) => {
+  const dragState = editorState.dragState;
+  if (!dragState || dragState.pointerId !== event.pointerId) {
+    return;
+  }
+
+  const point = getEditorPointerPoint(event);
+  dragState.currentX = point.x;
+  dragState.currentY = point.y;
+
+  const movedX = Math.abs(dragState.currentX - dragState.startX);
+  const movedY = Math.abs(dragState.currentY - dragState.startY);
+  dragState.moved = movedX > DRAG_MOVE_THRESHOLD || movedY > DRAG_MOVE_THRESHOLD;
+
+  showDraftMarker(getDragRect(dragState));
+  event.preventDefault();
+});
+
+editorClickLayer?.addEventListener("pointerup", (event) => {
+  const dragState = editorState.dragState;
+  if (!dragState || dragState.pointerId !== event.pointerId) {
+    return;
+  }
+
+  const field = createPlacedFieldFromScreenRect(getDragRect(dragState));
   editorState.placedFields.push(field);
+  editorState.dragState = null;
+  hideDraftMarker();
   redrawEditorMarkers();
+
+  if (editorClickLayer.hasPointerCapture(event.pointerId)) {
+    editorClickLayer.releasePointerCapture(event.pointerId);
+  }
+  event.preventDefault();
+});
+
+editorClickLayer?.addEventListener("pointercancel", (event) => {
+  const dragState = editorState.dragState;
+  if (!dragState || dragState.pointerId !== event.pointerId) {
+    return;
+  }
+
+  editorState.dragState = null;
+  hideDraftMarker();
+  if (editorClickLayer.hasPointerCapture(event.pointerId)) {
+    editorClickLayer.releasePointerCapture(event.pointerId);
+  }
+});
+
+editorClickLayer?.addEventListener("lostpointercapture", () => {
+  if (editorState.dragState) {
+    editorState.dragState = null;
+    hideDraftMarker();
+  }
 });
 
 editorFieldList?.addEventListener("click", (event) => {
