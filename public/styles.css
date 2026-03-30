@@ -337,46 +337,6 @@ h2 {
   margin-bottom: 0.8rem;
 }
 
-.worksheet-flex-row {
-  display: flex;
-  gap: 1.2rem;
-  align-items: flex-start;
-}
-
-.worksheet-preview-panel {
-  min-width: 320px;
-  max-width: 420px;
-  background: #f7fafd;
-  border: 1px solid var(--vscode-border);
-  border-radius: 6px;
-  padding: 0.7rem 0.7rem 0.5rem 0.7rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.worksheet-preview-panel .subheading {
-  margin-bottom: 0.5rem;
-}
-
-#worksheetPreviewCanvas {
-  width: 100%;
-  max-width: 380px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  margin-bottom: 0.3rem;
-  display: block;
-}
-
-.worksheet-preview-overlay {
-  position: absolute;
-  left: 0;
-  top: 0;
-  pointer-events: none;
-}
-
 .sheet-fields {
   border: 1px solid var(--vscode-border);
   border-radius: 4px;

@@ -1,18 +1,3 @@
-// Live preview endpoint: returns a filled PDF for a single row (in-memory, no file download)
-app.post("/api/preview", upload.single("pdf"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: "PDF file is required." });
-    }
-    const row = JSON.parse(req.body.row || "{}") || {};
-    const { pdfBytes } = await generateFilledPdf(req.file.buffer, row, 0);
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Cache-Control", "no-store");
-    res.send(Buffer.from(pdfBytes));
-  } catch (error) {
-    res.status(500).json({ error: error.message || "Preview failed." });
-  }
-});
 const express = require("express");
 const multer = require("multer");
 const { PDFDocument, rgb } = require("pdf-lib");
