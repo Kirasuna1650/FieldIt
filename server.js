@@ -147,11 +147,13 @@ async function createManualFieldsPdf(templatePdfBytes, fieldSpecs) {
   const form = pdfDoc.getForm();
   const pages = pdfDoc.getPages();
   const usedNames = new Set(form.getFields().map((field) => field.getName()));
+  let addedCount = 0;
 
   for (let idx = 0; idx < fieldSpecs.length; idx += 1) {
     const spec = fieldSpecs[idx] || {};
     const pageIndex = Number(spec.pageIndex);
     if (!Number.isInteger(pageIndex) || pageIndex < 0 || pageIndex >= pages.length) {
+      console.warn(`[manual-fields] Skipping field at idx ${idx}: invalid pageIndex`, spec);
       continue;
     }
 
@@ -169,6 +171,7 @@ async function createManualFieldsPdf(templatePdfBytes, fieldSpecs) {
     const height = Math.max(18, Number(spec.height) || 24);
 
     if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      console.warn(`[manual-fields] Skipping field at idx ${idx}: invalid coordinates`, spec);
       continue;
     }
 
@@ -185,10 +188,13 @@ async function createManualFieldsPdf(templatePdfBytes, fieldSpecs) {
       textColor: rgb(0.08, 0.19, 0.31),
       // No underline, no visible widget
     });
-    // Make the field invisible (no border, no background, no underline)
     textField.enableScrolling();
-    // Optionally, shrink font size to fit (pdf-lib does not support auto font size, but we can set a small default)
     textField.updateAppearances(font => font);
+    addedCount += 1;
+  }
+
+  if (addedCount === 0) {
+    throw new Error("No manual fields were added. Check that your PDF has at least one page and that all field coordinates and page indices are valid.");
   }
 
   return pdfDoc.save();
