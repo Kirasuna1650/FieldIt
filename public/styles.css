@@ -471,8 +471,24 @@ h2 {
 
 .editor-marker-draft {
   border-style: dashed;
-  border-color: #1c5b96;
-  background: rgba(47, 116, 187, 0.08);
+  border-width: 2px;
+  border-color: #0b4c88;
+  background: rgba(37, 126, 214, 0.2);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.65), 0 0 0 2px rgba(11, 76, 136, 0.18);
+}
+
+.editor-marker-draft::after {
+  content: attr(data-size);
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 4px);
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #0b4c88;
+  border-radius: 3px;
+  padding: 1px 5px;
+  white-space: nowrap;
 }
 
 .editor-marker-label {

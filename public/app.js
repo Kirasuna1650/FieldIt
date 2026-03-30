@@ -544,6 +544,10 @@ function showDraftMarker(rect) {
   marker.style.top = `${normalized.top}px`;
   marker.style.width = `${normalized.width}px`;
   marker.style.height = `${normalized.height}px`;
+
+  const pdfWidth = Math.max(1, Math.round(normalized.width / editorState.scale));
+  const pdfHeight = Math.max(1, Math.round(normalized.height / editorState.scale));
+  marker.setAttribute("data-size", `${pdfWidth} x ${pdfHeight}`);
 }
 
 function hideDraftMarker() {
