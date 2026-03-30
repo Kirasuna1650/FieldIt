@@ -241,6 +241,10 @@ body {
 h2 {
   margin: 0 0 0.75rem;
   color: var(--accent-blue-strong);
+
+[hidden] {
+  display: none !important;
+}
 }
 
 .hint {
@@ -537,6 +541,7 @@ h2 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  -webkit-user-select: none;
   user-select: none;
   padding-right: 0.95rem;
   font-size: 0.82rem;
