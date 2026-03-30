@@ -73,6 +73,11 @@ eas build -p android --profile preview
 
 4. EAS returns a download URL for the APK/AAB when build completes.
 
+Local native Android project status:
+
+- `expo prebuild` was run and generated the Android native project (`android/`) with Kotlin entry files.
+- You can also build locally in Android Studio using that native project.
+
 ### Option 3: iOS Download via TestFlight
 
 Use this for iPhone distribution.
@@ -99,6 +104,12 @@ eas submit -p ios
 
 4. Invite testers in TestFlight. They can download from Apple TestFlight app.
 
+iOS native project note:
+
+- From Windows, Expo cannot generate the `ios/` native folder.
+- Packaged iOS builds still work through EAS cloud build.
+- If you want a committed native iOS project, run `npx expo prebuild --platform ios` on macOS/Linux.
+
 ## Backend URL Notes
 
 - Android emulator: http://10.0.2.2:3000
@@ -113,6 +124,11 @@ Set this value in the app's Backend Base URL field.
 - Pick PDF template from device
 - Detect PDF fields from backend
 - Send rows JSON payload to generate filled PDF
+
+## Native Language Notes
+
+- You do not need to manually rewrite the app in Kotlin and Swift to ship Android/iOS packages.
+- React Native + Expo compiles to native binaries for both stores.
 
 ## Next Suggested Improvements
 
