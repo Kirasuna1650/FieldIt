@@ -251,11 +251,6 @@ h2 {
   color: var(--vscode-text);
 }
 
-.generate-toggle {
-  margin-top: 0.45rem;
-  margin-bottom: 0.75rem;
-}
-
 .bulk-toggle input {
   width: 16px;
   height: 16px;

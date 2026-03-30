@@ -79,7 +79,7 @@ function setPdfFieldValue(field, value) {
   }
 }
 
-async function generateFilledPdf(templatePdfBytes, row, rowIndex, options = {}) {
+async function generateFilledPdf(templatePdfBytes, row, rowIndex) {
   const pdfDoc = await PDFDocument.load(templatePdfBytes);
   const form = pdfDoc.getForm();
   const fields = form.getFields();
@@ -97,10 +97,6 @@ async function generateFilledPdf(templatePdfBytes, row, rowIndex, options = {}) 
     } catch (error) {
       // Ignore incompatible values for individual fields to keep bulk generation running.
     }
-  }
-
-  if (options.flatten === true) {
-    form.flatten();
   }
 
   const pdfBytes = await pdfDoc.save();
@@ -147,13 +143,11 @@ async function createManualFieldsPdf(templatePdfBytes, fieldSpecs) {
   const form = pdfDoc.getForm();
   const pages = pdfDoc.getPages();
   const usedNames = new Set(form.getFields().map((field) => field.getName()));
-  let addedCount = 0;
 
   for (let idx = 0; idx < fieldSpecs.length; idx += 1) {
     const spec = fieldSpecs[idx] || {};
     const pageIndex = Number(spec.pageIndex);
     if (!Number.isInteger(pageIndex) || pageIndex < 0 || pageIndex >= pages.length) {
-      console.warn(`[manual-fields] Skipping field at idx ${idx}: invalid pageIndex`, spec);
       continue;
     }
 
@@ -171,7 +165,6 @@ async function createManualFieldsPdf(templatePdfBytes, fieldSpecs) {
     const height = Math.max(18, Number(spec.height) || 24);
 
     if (!Number.isFinite(x) || !Number.isFinite(y)) {
-      console.warn(`[manual-fields] Skipping field at idx ${idx}: invalid coordinates`, spec);
       continue;
     }
 
@@ -182,19 +175,10 @@ async function createManualFieldsPdf(templatePdfBytes, fieldSpecs) {
       y,
       width,
       height,
+      borderColor: rgb(0.26, 0.53, 0.86),
       borderWidth: 1,
-      borderColor: rgb(0.08, 0.19, 0.31),
-      backgroundColor: rgb(1, 1, 1),
-      textColor: rgb(0.08, 0.19, 0.31),
-      // Default visible widget
+      textColor: rgb(0.08, 0.19, 0.31)
     });
-    textField.enableScrolling();
-    textField.updateAppearances(font => font);
-    addedCount += 1;
-  }
-
-  if (addedCount === 0) {
-    throw new Error("No manual fields were added. Check that your PDF has at least one page and that all field coordinates and page indices are valid.");
   }
 
   return pdfDoc.save();
@@ -255,8 +239,7 @@ app.post(
       const { filename, pdfBytes } = await generateFilledPdf(
         pdfFile.buffer,
         filteredRows[0],
-        0,
-        { flatten: isTruthy(req.body.flatten) }
+        0
       );
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader(

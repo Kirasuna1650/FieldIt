@@ -9,7 +9,6 @@ const sheetFieldsContainer = document.getElementById("sheetFieldsContainer");
 const bulkModeToggle = document.getElementById("bulkModeToggle");
 const bulkModeNote = document.getElementById("bulkModeNote");
 const outputNameInput = document.getElementById("outputFileName");
-const flattenOutputToggle = document.getElementById("flattenOutputToggle");
 const statusEl = document.getElementById("status");
 const downloadLink = document.getElementById("downloadLink");
 const helpBtn = document.getElementById("helpBtn");
@@ -922,7 +921,6 @@ async function generateOutput() {
     const fd = new FormData();
     fd.append("pdf", pdf);
     fd.append("rows", JSON.stringify(rows));
-    fd.append("flatten", flattenOutputToggle?.checked ? "true" : "false");
 
     const response = await fetch("/api/generate", {
       method: "POST",
