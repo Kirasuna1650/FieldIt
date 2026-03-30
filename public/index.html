@@ -2,7 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Field It" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-512.png" />
     <title>PDF BulkEdit</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -14,6 +23,15 @@
         <p class="eyebrow">Online PDF Field Editor</p>
         <h1>Field It</h1>
       </div>
+      <button
+        id="installBtn"
+        class="install-btn"
+        type="button"
+        title="Install app"
+        hidden
+      >
+        Install App
+      </button>
       <button
         id="helpBtn"
         class="help-btn"
@@ -34,6 +52,16 @@
         </ol>
       </section>
     </header>
+
+    <section id="iosInstallHint" class="ios-install-hint" hidden>
+      <p>
+        On iPhone/iPad Safari: tap <strong>Share</strong> then
+        <strong>Add to Home Screen</strong> to install this app.
+      </p>
+      <button id="iosInstallDismissBtn" type="button" aria-label="Dismiss install hint">
+        Dismiss
+      </button>
+    </section>
 
     <main class="dashboard-shell">
       <aside class="workspace-status-rail">

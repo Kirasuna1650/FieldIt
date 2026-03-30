@@ -1,0 +1,25 @@
+{
+  "name": "Field It",
+  "short_name": "FieldIt",
+  "description": "Fill one PDF form template quickly from worksheet-style input.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f3f3f3",
+  "theme_color": "#0078d4",
+  "icons": [
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

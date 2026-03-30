@@ -11,16 +11,21 @@ const bulkModeNote = document.getElementById("bulkModeNote");
 const outputNameInput = document.getElementById("outputFileName");
 const statusEl = document.getElementById("status");
 const downloadLink = document.getElementById("downloadLink");
+const installBtn = document.getElementById("installBtn");
+const iosInstallHint = document.getElementById("iosInstallHint");
+const iosInstallDismissBtn = document.getElementById("iosInstallDismissBtn");
 const helpBtn = document.getElementById("helpBtn");
 const helpPopover = document.getElementById("helpPopover");
 const panelNavSlots = Array.from(document.querySelectorAll(".panel-nav-slot"));
 const stepTabs = Array.from(document.querySelectorAll(".step-tab"));
 const stepPanels = Array.from(document.querySelectorAll(".step-panel"));
 const BULK_MODE_ENABLED = false;
+const IOS_INSTALL_HINT_DISMISSED_KEY = "fieldit-ios-install-hint-dismissed";
 
 let detectedFields = [];
 let rowCount = 0;
 let currentDownloadUrl = "";
+let installPromptEvent = null;
 let groupedFields = {
   staticFields: [],
   repeating: null
@@ -83,6 +88,33 @@ function setActiveStep(stepName) {
 function setStatus(message, isError = false) {
   statusEl.textContent = message;
   statusEl.classList.toggle("error", isError);
+}
+
+function isStandaloneMode() {
+  const displayModeStandalone =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(display-mode: standalone)").matches;
+  return displayModeStandalone || window.navigator.standalone === true;
+}
+
+function isIosSafari() {
+  const ua = window.navigator.userAgent || "";
+  const isIos = /iPhone|iPad|iPod/i.test(ua);
+  const isSafari = /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
+  return isIos && isSafari;
+}
+
+function shouldShowIosInstallHint() {
+  const wasDismissed =
+    window.localStorage.getItem(IOS_INSTALL_HINT_DISMISSED_KEY) === "1";
+  return isIosSafari() && !isStandaloneMode() && !installPromptEvent && !wasDismissed;
+}
+
+function updateIosInstallHintVisibility() {
+  if (!iosInstallHint) {
+    return;
+  }
+  iosInstallHint.hidden = !shouldShowIosInstallHint();
 }
 
 function isBulkModeEnabled() {
@@ -567,3 +599,59 @@ setHelpVisible(false);
 
 detectFieldsBtn.addEventListener("click", detectFields);
 generateBtn.addEventListener("click", generateOutput);
+
+installBtn?.addEventListener("click", async () => {
+  if (!installPromptEvent) {
+    setStatus("Install prompt is not available on this device/browser.", true);
+    return;
+  }
+
+  installPromptEvent.prompt();
+  const choice = await installPromptEvent.userChoice;
+  installPromptEvent = null;
+  installBtn.hidden = true;
+
+  if (choice.outcome === "accepted") {
+    setStatus("App install started.");
+    return;
+  }
+
+  setStatus("Install dismissed. You can continue in the browser.");
+});
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  installPromptEvent = event;
+  if (installBtn) {
+    installBtn.hidden = false;
+  }
+  updateIosInstallHintVisibility();
+});
+
+window.addEventListener("appinstalled", () => {
+  installPromptEvent = null;
+  if (installBtn) {
+    installBtn.hidden = true;
+  }
+  if (iosInstallHint) {
+    iosInstallHint.hidden = true;
+  }
+  setStatus("App installed. Launch it from your home screen.");
+});
+
+iosInstallDismissBtn?.addEventListener("click", () => {
+  window.localStorage.setItem(IOS_INSTALL_HINT_DISMISSED_KEY, "1");
+  if (iosInstallHint) {
+    iosInstallHint.hidden = true;
+  }
+});
+
+updateIosInstallHintVisibility();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // App remains functional even if service worker registration fails.
+    });
+  });
+}
